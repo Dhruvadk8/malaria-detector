@@ -21,7 +21,7 @@ MODEL_PATH = os.path.join(BASE_DIR, "backend", "models", "malaria_model.h5")
 DB_PATH = os.path.join(BASE_DIR, "backend", "instance", "malaria.db")
 SEED_PATH = os.path.join(BASE_DIR, "backend", "data", "seed_detections.json")
 
-# ─── Phase Metadata (WHO Aligned) ───────────────────────────────────────────
+# ─── Phase Metadata ───────────────────────────────────────────────────────────
 PHASE_METADATA = {
     "ring": {
         "name": "Ring Stage (Early Trophozoite)", "short_name": "Ring Stage", "key": "ring",
@@ -48,7 +48,7 @@ PHASE_METADATA = {
         "morphology": "Multinucleate complex containing 8 to 24 dividing merozoites with clustered central hemozoin pigment",
         "description": "Late-stage asexual schizogony where nuclear division produces multiple daughter merozoites prior to host cell rupture.",
         "clinical": "Imminent erythrocyte lysis releases pyrogenic toxins, causing acute rigors, shivering, spike fevers (up to 41°C), and marked hemolytic anemia.",
-        "treatment": "Emergency antimalarial therapy. For severe malaria or persistent vomiting, initiate IV Artesunate (2.4 mg/kg) followed by full course oral ACT."
+        "treatment": "Emergency antimalarial therapy. For severe malaria, initiate IV Artesunate (2.4 mg/kg) followed by full course oral ACT."
     },
     "gametocyte": {
         "name": "Gametocyte Stage (Sexual Precursor)", "short_name": "Gametocyte Stage", "key": "gametocyte",
@@ -70,11 +70,10 @@ PHASE_METADATA = {
     }
 }
 
-# ─── Load or Seed Historical Analyses ─────────────────────────────────────────
+# ─── Load Detection Records ───────────────────────────────────────────────────
 def load_all_detections():
-    """Load historical detection records from SQLite db or seed json fallback."""
     records = []
-    # 1. Try local SQLite db if available
+    # 1. Try SQLite
     if os.path.exists(DB_PATH):
         try:
             conn = sqlite3.connect(DB_PATH)
@@ -98,7 +97,6 @@ def load_all_detections():
                     except Exception:
                         pass
                 
-                # Format datetime string
                 dt_str = r[3]
                 date_part = "November 25, 2026"
                 time_part = "05:00 AM"
@@ -123,9 +121,9 @@ def load_all_detections():
             if records:
                 return records
         except Exception as e:
-            logger.warning(f"Failed to read from SQLite: {e}")
+            logger.warning(f"SQLite read failed: {e}")
 
-    # 2. Try seed json file
+    # 2. Try seed JSON
     if os.path.exists(SEED_PATH):
         try:
             with open(SEED_PATH, "r") as f:
@@ -152,12 +150,12 @@ def load_all_detections():
                 })
             return records
         except Exception as e:
-            logger.warning(f"Failed to read seed detections: {e}")
+            logger.warning(f"Seed JSON read failed: {e}")
 
     return records
 
 
-# ─── Model & Grad-CAM Inference ───────────────────────────────────────────────
+# ─── Inference ─────────────────────────────────────────────────────────────────
 @st.cache_resource
 def get_model():
     if not os.path.exists(MODEL_PATH):
@@ -250,7 +248,6 @@ def run_analysis(pil_img):
     overlay = overlay_heatmap(bgr, heatmap) if heatmap is not None else None
     stage_name, stage_conf, stage_info = classify_phase(bgr, heatmap, result == "Parasitized")
 
-    # Generate thumbnail
     im_thumb = pil_img.copy()
     im_thumb.thumbnail((80, 80))
     buf = io.BytesIO()
@@ -275,399 +272,381 @@ def run_analysis(pil_img):
 # ─── Full-Fidelity Custom CSS (Exact Bootstrap + Flask UI) ───────────────────
 def inject_full_css():
     st.markdown("""
-    <!-- External Frameworks -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        :root {
-            --primary-color: #2563eb;
-            --secondary-color: #3b82f6;
-            --success-color: #059669;
-            --danger-color: #dc2626;
-            --warning-color: #d97706;
-            --info-color: #2563eb;
-            --sidebar-width: 280px;
-            --header-height: 70px;
-        }
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-        html, body, .stApp {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-            background-color: #f3f4f6 !important;
-            color: #1e293b !important;
-        }
+<style>
+:root {
+    --primary-color: #2563eb;
+    --secondary-color: #3b82f6;
+    --success-color: #059669;
+    --danger-color: #dc2626;
+    --warning-color: #d97706;
+    --info-color: #2563eb;
+}
 
-        /* Hide Streamlit Chrome */
-        header[data-testid="stHeader"], footer, #MainMenu {
-            display: none !important;
-        }
+html, body, .stApp {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    background-color: #f3f4f6 !important;
+    color: #1e293b !important;
+}
 
-        .block-container {
-            padding: 0 !important;
-            margin: 0 !important;
-            max-width: 100% !important;
-        }
+/* Hide Streamlit default header/footer */
+header[data-testid="stHeader"], footer, #MainMenu {
+    display: none !important;
+}
 
-        /* ─── Sidebar Styling ─── */
-        [data-testid="stSidebar"] {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            bottom: 0 !important;
-            width: var(--sidebar-width) !important;
-            min-width: var(--sidebar-width) !important;
-            max-width: var(--sidebar-width) !important;
-            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
-            padding: 1.5rem 1rem !important;
-            z-index: 1000 !important;
-            box-shadow: 4px 0 10px rgba(0,0,0,0.1) !important;
-        }
+/* Page content area */
+.block-container {
+    padding-top: 5.5rem !important;
+    padding-bottom: 2.5rem !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    max-width: 100% !important;
+}
 
-        [data-testid="stSidebar"] [data-testid="stSidebarContent"] {
-            padding: 0 !important;
-        }
+/* ─── Sidebar Styling ─── */
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
+    min-width: 280px !important;
+    max-width: 280px !important;
+    padding: 1.5rem 1rem !important;
+    box-shadow: 4px 0 10px rgba(0,0,0,0.1) !important;
+}
 
-        .sidebar-logo {
-            display: flex;
-            align-items: center;
-            padding: 0.5rem 0.5rem 1.2rem 0.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            margin-bottom: 1.2rem;
-        }
+[data-testid="stSidebar"] * {
+    color: rgba(255,255,255,0.85) !important;
+}
 
-        .sidebar-logo i {
-            font-size: 26px;
-            margin-right: 12px;
-            color: #2563eb;
-            filter: drop-shadow(0 0 8px rgba(37, 99, 235, 0.4));
-        }
+.sidebar-logo {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.5rem 1.2rem 0.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 1.2rem;
+}
 
-        .sidebar-logo h2 {
-            font-size: 20px;
-            font-weight: 600;
-            margin: 0;
-            color: #ffffff !important;
-            letter-spacing: -0.5px;
-        }
+.sidebar-logo i {
+    font-size: 26px;
+    margin-right: 12px;
+    color: #2563eb;
+    filter: drop-shadow(0 0 8px rgba(37, 99, 235, 0.4));
+}
 
-        /* Sidebar Buttons */
-        [data-testid="stSidebar"] [data-testid="stButton"] button {
-            background: transparent !important;
-            border: none !important;
-            color: rgba(255,255,255,0.8) !important;
-            padding: 11px 18px !important;
-            margin: 4px 0 !important;
-            border-radius: 8px !important;
-            font-weight: 500 !important;
-            font-size: 14.5px !important;
-            display: flex !important;
-            align-items: center !important;
-            width: 100% !important;
-            text-align: left !important;
-            transition: all 0.25s ease !important;
-            box-shadow: none !important;
-        }
+.sidebar-logo h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+    color: #ffffff !important;
+    letter-spacing: -0.5px;
+}
 
-        [data-testid="stSidebar"] [data-testid="stButton"] button:hover {
-            background: rgba(59, 130, 246, 0.12) !important;
-            color: #ffffff !important;
-            transform: translateX(4px) !important;
-        }
+/* Sidebar Navigation Buttons */
+[data-testid="stSidebar"] [data-testid="stButton"] button {
+    background: transparent !important;
+    border: none !important;
+    color: rgba(255,255,255,0.8) !important;
+    padding: 12px 18px !important;
+    margin: 3px 0 !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    font-size: 14.5px !important;
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    text-align: left !important;
+    transition: all 0.25s ease !important;
+    box-shadow: none !important;
+}
 
-        .nav-active [data-testid="stButton"] button {
-            background: rgba(59, 130, 246, 0.18) !important;
-            color: #ffffff !important;
-            font-weight: 600 !important;
-            border-left: 3px solid #3b82f6 !important;
-            border-radius: 4px 8px 8px 4px !important;
-        }
+[data-testid="stSidebar"] [data-testid="stButton"] button:hover {
+    background: rgba(59, 130, 246, 0.12) !important;
+    color: #ffffff !important;
+    transform: translateX(4px) !important;
+}
 
-        .nav-logout [data-testid="stButton"] button {
-            background-color: #dc2626 !important;
-            color: #ffffff !important;
-            font-weight: 600 !important;
-            justify-content: center !important;
-            margin-top: 1.5rem !important;
-            padding: 10px 16px !important;
-            border-radius: 8px !important;
-        }
+.nav-active [data-testid="stButton"] button {
+    background: rgba(59, 130, 246, 0.18) !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    border-left: 3px solid #3b82f6 !important;
+    border-radius: 4px 8px 8px 4px !important;
+}
 
-        .nav-logout [data-testid="stButton"] button:hover {
-            background-color: #b91c1c !important;
-            transform: none !important;
-        }
+.nav-logout [data-testid="stButton"] button {
+    background-color: #dc2626 !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    justify-content: center !important;
+    margin-top: 1.5rem !important;
+    padding: 10px 16px !important;
+    border-radius: 8px !important;
+}
 
-        /* ─── Top Dashboard Header ─── */
-        .dashboard-header {
-            position: fixed;
-            top: 0;
-            right: 0;
-            left: var(--sidebar-width);
-            height: var(--header-height);
-            background: #ffffff;
-            padding: 1rem 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            z-index: 900;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
-        }
+.nav-logout [data-testid="stButton"] button:hover {
+    background-color: #b91c1c !important;
+    transform: none !important;
+}
 
-        .header-search {
-            max-width: 380px;
-            width: 100%;
-            position: relative;
-        }
+/* ─── Fixed Top Header ─── */
+.dashboard-header {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 280px;
+    height: 70px;
+    background: #ffffff;
+    padding: 0.9rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 990;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
 
-        .header-search input {
-            border-radius: 20px;
-            padding: 8px 20px 8px 40px;
-            background: #f3f4f6;
-            border: 1px solid #e5e7eb;
-            width: 100%;
-            font-size: 13.5px;
-            color: #374151;
-            outline: none;
-        }
+.header-search {
+    max-width: 380px;
+    width: 100%;
+    position: relative;
+}
 
-        .header-search i {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #9ca3af;
-            font-size: 14px;
-        }
+.header-search input {
+    border-radius: 20px;
+    padding: 8px 20px 8px 40px;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    width: 100%;
+    font-size: 13.5px;
+    color: #374151;
+    outline: none;
+}
 
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+.header-search i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    font-size: 14px;
+}
 
-        .user-profile .user-info {
-            text-align: right;
-            line-height: 1.25;
-        }
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
 
-        .user-profile .user-name {
-            font-weight: 600;
-            font-size: 14px;
-            color: #1e293b;
-            margin: 0;
-        }
+.user-profile .user-info {
+    text-align: right;
+    line-height: 1.25;
+}
 
-        .user-profile .user-role {
-            font-size: 12px;
-            color: #6b7280;
-            margin: 0;
-        }
+.user-profile .user-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: #1e293b;
+    margin: 0;
+}
 
-        .user-profile .avatar-circle {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background-color: #dc2626;
-            color: white;
-            font-weight: 700;
-            font-size: 13.5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+.user-profile .user-role {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0;
+}
 
-        /* ─── Main Content Container ─── */
-        .main-content-wrapper {
-            margin-left: var(--sidebar-width);
-            margin-top: var(--header-height);
-            padding: 2rem 2.5rem 3rem 2.5rem;
-            background-color: #f3f4f6;
-            min-height: calc(100vh - var(--header-height));
-        }
+.user-profile .avatar-circle {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: #dc2626;
+    color: white;
+    font-weight: 700;
+    font-size: 13.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
-        /* ─── Stats KPI Cards ─── */
-        .stats-card {
-            background: #ffffff;
-            border-radius: 12px;
-            padding: 1.4rem 1.5rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            border-top: 3px solid;
-            height: 100%;
-        }
+/* ─── Stats KPI Cards ─── */
+.stats-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 1.4rem 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    border-top: 3.5px solid;
+    height: 100%;
+}
 
-        .stats-card.card-blue  { border-top-color: #3b82f6; }
-        .stats-card.card-red   { border-top-color: #dc2626; }
-        .stats-card.card-green { border-top-color: #059669; }
-        .stats-card.card-teal  { border-top-color: #06b6d4; }
+.stats-card.card-blue  { border-top-color: #3b82f6; }
+.stats-card.card-red   { border-top-color: #dc2626; }
+.stats-card.card-green { border-top-color: #059669; }
+.stats-card.card-teal  { border-top-color: #06b6d4; }
 
-        .stats-card .title {
-            font-size: 13px;
-            font-weight: 500;
-            color: #6b7280;
-            margin-bottom: 6px;
-        }
+.stats-card .title {
+    font-size: 13px;
+    font-weight: 500;
+    color: #6b7280;
+    margin-bottom: 6px;
+}
 
-        .stats-card .value {
-            font-size: 28px;
-            font-weight: 700;
-            line-height: 1.1;
-            margin-bottom: 6px;
-            color: #1e293b;
-        }
+.stats-card .value {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 6px;
+    color: #1e293b;
+}
 
-        .stats-card .trend {
-            font-size: 12px;
-            font-weight: 500;
-        }
+.stats-card .trend {
+    font-size: 12px;
+    font-weight: 500;
+}
 
-        /* ─── Upload Area ─── */
-        .upload-area-box {
-            border: 2px dashed #e5e7eb;
-            border-radius: 12px;
-            padding: 2.5rem 1.5rem;
-            text-align: center;
-            background: #ffffff;
-            transition: all 0.25s ease;
-            cursor: pointer;
-        }
+/* ─── Upload Card ─── */
+.upload-area-box {
+    border: 2px dashed #e5e7eb;
+    border-radius: 12px;
+    padding: 2.2rem 1.5rem;
+    text-align: center;
+    background: #ffffff;
+    transition: all 0.25s ease;
+}
 
-        .upload-area-box:hover {
-            border-color: #2563eb;
-            background: rgba(37, 99, 235, 0.02);
-        }
+.upload-area-box:hover {
+    border-color: #2563eb;
+    background: rgba(37, 99, 235, 0.02);
+}
 
-        /* Streamlit file uploader override */
-        [data-testid="stFileUploader"] {
-            margin-top: 0.8rem !important;
-        }
+[data-testid="stFileUploader"] {
+    margin-top: 0.5rem !important;
+}
 
-        [data-testid="stFileUploader"] section {
-            padding: 0.8rem 1rem !important;
-            border-radius: 8px !important;
-            border: 1px solid #e5e7eb !important;
-            background: #f8fafc !important;
-        }
+[data-testid="stFileUploader"] section {
+    border-radius: 8px !important;
+    border: 1px solid #e5e7eb !important;
+    background: #f8fafc !important;
+}
 
-        /* ─── Recent Analyses Table ─── */
-        .table-custom {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13.5px;
-        }
+/* ─── Recent Analyses Table ─── */
+.table-custom {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+}
 
-        .table-custom th {
-            background-color: #f8fafc;
-            color: #374151;
-            font-weight: 600;
-            padding: 12px 16px;
-            border-bottom: 1px solid #e5e7eb;
-            text-align: left;
-        }
+.table-custom th {
+    background-color: #f8fafc;
+    color: #374151;
+    font-weight: 600;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+}
 
-        .table-custom td {
-            padding: 14px 16px;
-            border-bottom: 1px solid #f1f5f9;
-            vertical-align: middle;
-            color: #1e293b;
-        }
+.table-custom td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    color: #1e293b;
+}
 
-        .table-custom tr:last-child td {
-            border-bottom: none;
-        }
+.table-custom tr:last-child td {
+    border-bottom: none;
+}
 
-        .badge-pill-custom {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 14px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
+.badge-pill-custom {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
 
-        .badge-parasitized-custom {
-            background-color: #dc2626;
-            color: #ffffff;
-        }
+.badge-parasitized-custom {
+    background-color: #dc2626;
+    color: #ffffff;
+}
 
-        .badge-uninfected-custom {
-            background-color: #059669;
-            color: #ffffff;
-        }
+.badge-uninfected-custom {
+    background-color: #059669;
+    color: #ffffff;
+}
 
-        .progress-bar-wrap {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+.progress-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
-        .progress-bar-bg {
-            flex: 1;
-            height: 6px;
-            background-color: #fee2e2;
-            border-radius: 999px;
-            min-width: 90px;
-        }
+.progress-bar-bg {
+    flex: 1;
+    height: 6px;
+    background-color: #fee2e2;
+    border-radius: 999px;
+    min-width: 90px;
+}
 
-        .progress-bar-fill {
-            height: 6px;
-            background-color: #dc2626;
-            border-radius: 999px;
-        }
+.progress-bar-fill {
+    height: 6px;
+    background-color: #dc2626;
+    border-radius: 999px;
+}
 
-        .action-icon-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            border: 1px solid #dbeafe;
-            color: #2563eb;
-            background: #ffffff;
-            margin-right: 4px;
-            font-size: 13px;
-            text-decoration: none;
-        }
+.action-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid #dbeafe;
+    color: #2563eb;
+    background: #ffffff;
+    margin-right: 4px;
+    font-size: 13px;
+    text-decoration: none;
+}
 
-        .action-icon-btn.btn-trash {
-            border-color: #fee2e2;
-            color: #dc2626;
-        }
-    </style>
-    """, unsafe_allow_html=True)
+.action-icon-btn.btn-trash {
+    border-color: #fee2e2;
+    color: #dc2626;
+}
+</style>
+""", unsafe_allow_html=True)
 
 
 # ─── Sidebar Component ────────────────────────────────────────────────────────
 def render_sidebar():
     with st.sidebar:
         st.markdown("""
-        <div class="sidebar-logo">
-            <i class="fas fa-microscope"></i>
-            <h2>Malaria Detection</h2>
-        </div>
-        """, unsafe_allow_html=True)
+<div class="sidebar-logo">
+    <i class="fas fa-microscope"></i>
+    <h2>Malaria Detection</h2>
+</div>
+""", unsafe_allow_html=True)
 
         pages = [
-            ("fas fa-tachometer-alt", "Dashboard"),
-            ("fas fa-flask", "New Analysis"),
-            ("fas fa-project-diagram", "Malaria Phases"),
-            ("fas fa-history", "History"),
-            ("fas fa-chart-bar", "Statistics"),
-            ("fas fa-book", "Documentation"),
-            ("fas fa-cog", "Settings"),
+            ("Dashboard", "Dashboard"),
+            ("New Analysis", "New Analysis"),
+            ("Malaria Phases", "Malaria Phases"),
+            ("History", "History"),
+            ("Statistics", "Statistics"),
+            ("Documentation", "Documentation"),
+            ("Settings", "Settings"),
         ]
 
         if "current_page" not in st.session_state:
             st.session_state.current_page = "Dashboard"
 
-        for icon_cls, page_name in pages:
-            is_active = (st.session_state.current_page == page_name)
+        for display_name, page_id in pages:
+            is_active = (st.session_state.current_page == page_id)
             cls = "nav-active" if is_active else ""
             st.markdown(f'<div class="{cls}">', unsafe_allow_html=True)
-            if st.button(f"{page_name}", key=f"nav_{page_name}", use_container_width=True):
-                st.session_state.current_page = page_name
+            if st.button(display_name, key=f"nav_{page_id}", use_container_width=True):
+                st.session_state.current_page = page_id
                 st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
 
@@ -681,37 +660,35 @@ def render_sidebar():
 # ─── Top Header Bar ───────────────────────────────────────────────────────────
 def render_top_header():
     st.markdown("""
-    <header class="dashboard-header">
-        <div class="header-search">
-            <i class="fas fa-search"></i>
-            <input type="text" placeholder="Search in analysis history...">
+<header class="dashboard-header">
+    <div class="header-search">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="Search in analysis history...">
+    </div>
+    <div class="user-profile">
+        <div class="user-info">
+            <p class="user-name">dk</p>
+            <p class="user-role">Medical Researcher</p>
         </div>
-        <div class="user-profile">
-            <div class="user-info">
-                <p class="user-name">dk</p>
-                <p class="user-role">Medical Researcher</p>
-            </div>
-            <div class="avatar-circle">DK</div>
-        </div>
-    </header>
-    """, unsafe_allow_html=True)
+        <div class="avatar-circle">DK</div>
+    </div>
+</header>
+""", unsafe_allow_html=True)
 
 
 # ─── Dashboard Page View ───────────────────────────────────────────────────────
 def page_dashboard(detections):
     render_top_header()
 
-    st.markdown('<div class="main-content-wrapper">', unsafe_allow_html=True)
-
     # 1. Page Title
     st.markdown("""
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="mb-1 fw-bold" style="font-size: 22px; color: #1e293b;">Dashboard</h2>
-            <p class="text-muted mb-0" style="font-size: 13.5px;">Welcome back! Monitor and analyze malaria detection results.</p>
-        </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1 fw-bold" style="font-size: 22px; color: #1e293b;">Dashboard</h2>
+        <p class="text-muted mb-0" style="font-size: 13.5px;">Welcome back! Monitor and analyze malaria detection results.</p>
     </div>
-    """, unsafe_allow_html=True)
+</div>
+""", unsafe_allow_html=True)
 
     # 2. Stats KPI Cards
     total_analyses = max(len(detections), 40)
@@ -720,53 +697,53 @@ def page_dashboard(detections):
     accuracy_rate = 98.2
 
     st.markdown(f"""
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <div class="stats-card card-blue">
-                <div class="title">Total Analyses</div>
-                <div class="value">{total_analyses}</div>
-                <div class="trend text-success"><i class="fas fa-arrow-up me-1"></i>12% this week</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card card-red">
-                <div class="title">Parasitized Cases</div>
-                <div class="value" style="color: #dc2626;">{parasitized_count}</div>
-                <div class="trend text-danger"><i class="fas fa-arrow-up me-1"></i>8% this week</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card card-green">
-                <div class="title">Uninfected Cases</div>
-                <div class="value" style="color: #059669;">{uninfected_count}</div>
-                <div class="trend text-success"><i class="fas fa-arrow-down me-1"></i>5% this week</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card card-teal">
-                <div class="title">Model Accuracy</div>
-                <div class="value">{accuracy_rate}%</div>
-                <div class="trend text-success"><i class="fas fa-arrow-up me-1"></i>2% this month</div>
-            </div>
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stats-card card-blue">
+            <div class="title">Total Analyses</div>
+            <div class="value">{total_analyses}</div>
+            <div class="trend text-success"><i class="fas fa-arrow-up me-1"></i>12% this week</div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    <div class="col-md-3">
+        <div class="stats-card card-red">
+            <div class="title">Parasitized Cases</div>
+            <div class="value" style="color: #dc2626;">{parasitized_count}</div>
+            <div class="trend text-danger"><i class="fas fa-arrow-up me-1"></i>8% this week</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card card-green">
+            <div class="title">Uninfected Cases</div>
+            <div class="value" style="color: #059669;">{uninfected_count}</div>
+            <div class="trend text-success"><i class="fas fa-arrow-down me-1"></i>5% this week</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card card-teal">
+            <div class="title">Model Accuracy</div>
+            <div class="value">{accuracy_rate}%</div>
+            <div class="trend text-success"><i class="fas fa-arrow-up me-1"></i>2% this month</div>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
     # 3. Upload & Results Cards (Side by Side)
     col_upload, col_result = st.columns([1, 1], gap="medium")
 
     with col_upload:
         st.markdown("""
-        <div class="card border-0 shadow-sm mb-3" style="border-radius: 12px; background: white; padding: 1.4rem;">
-            <h5 class="fw-semibold mb-3" style="font-size: 16px; color: #1e293b;">Upload Image</h5>
-            <div class="upload-area-box">
-                <i class="fas fa-cloud-upload-alt fa-3x mb-3" style="color: #2563eb;"></i>
-                <h4 class="fw-bold mb-1" style="font-size: 18px; color: #1e293b;">Drop your image here</h4>
-                <p class="text-muted mb-2" style="font-size: 13.5px;">or click to browse</p>
-                <p class="text-muted small mb-0" style="font-size: 11.5px;">Supported formats: PNG, JPG, JPEG, TIFF</p>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+<div class="card border-0 shadow-sm mb-2" style="border-radius: 12px; background: white; padding: 1.4rem;">
+    <h5 class="fw-semibold mb-3" style="font-size: 16px; color: #1e293b;">Upload Image</h5>
+    <div class="upload-area-box">
+        <i class="fas fa-cloud-upload-alt fa-3x mb-3" style="color: #2563eb;"></i>
+        <h4 class="fw-bold mb-1" style="font-size: 18px; color: #1e293b;">Drop your image here</h4>
+        <p class="text-muted mb-2" style="font-size: 13.5px;">or click to browse</p>
+        <p class="text-muted small mb-0" style="font-size: 11.5px;">Supported formats: PNG, JPG, JPEG, TIFF</p>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
         uploaded_file = st.file_uploader(
             "Upload smear image",
@@ -781,7 +758,6 @@ def page_dashboard(detections):
                 with st.spinner("Classifying erythrocyte morphology & Grad-CAM staging..."):
                     new_analysis = run_analysis(pil_img)
                     st.session_state["active_result"] = new_analysis
-                    # Add to session history
                     st.session_state["session_detections"].insert(0, {
                         "id": len(detections) + 1,
                         "result": new_analysis["result"],
@@ -804,36 +780,36 @@ def page_dashboard(detections):
             virus_icon = "virus" if res_str == "Parasitized" else "shield-virus"
 
             st.markdown(f"""
-            <div class="card border-0 shadow-sm" style="border-radius: 12px; background: white; padding: 1.4rem;">
-                <h5 class="fw-semibold mb-3" style="font-size: 16px; color: #1e293b;">Analysis Results</h5>
-                <div class="mb-3">
-                    <span class="badge {badge_class} rounded-pill px-3 py-2" style="font-size: 13px;">
-                        <i class="fas fa-{virus_icon} me-1"></i> {res_str}
-                    </span>
-                    <span class="ms-2 fw-bold" style="font-size: 18px; color: #1e293b;">{conf:.1%}</span>
-                </div>
-                <div class="mb-2">
-                    <div class="text-muted small">Developmental Phase:</div>
-                    <div class="fw-bold" style="font-size: 15px; color: #1e293b;">{stage_name}</div>
-                    <div class="text-muted small">Timeline: {stage_info['timeline']}</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+<div class="card border-0 shadow-sm" style="border-radius: 12px; background: white; padding: 1.4rem;">
+    <h5 class="fw-semibold mb-3" style="font-size: 16px; color: #1e293b;">Analysis Results</h5>
+    <div class="mb-3">
+        <span class="badge {badge_class} rounded-pill px-3 py-2" style="font-size: 13px;">
+            <i class="fas fa-{virus_icon} me-1"></i> {res_str}
+        </span>
+        <span class="ms-2 fw-bold" style="font-size: 18px; color: #1e293b;">{conf:.1%}</span>
+    </div>
+    <div class="mb-2">
+        <div class="text-muted small">Developmental Phase:</div>
+        <div class="fw-bold" style="font-size: 15px; color: #1e293b;">{stage_name}</div>
+        <div class="text-muted small">Timeline: {stage_info['timeline']}</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
             if active_res.get("overlay") is not None:
                 st.image(active_res["overlay"], caption="Grad-CAM Attention Heatmap", use_container_width=True)
         else:
             st.markdown("""
-            <div class="card border-0 shadow-sm" style="border-radius: 12px; background: white; padding: 1.4rem; min-height: 275px; display: flex; flex-direction: column; justify-content: center;">
-                <h5 class="fw-semibold mb-0" style="font-size: 16px; color: #1e293b;">Analysis Results</h5>
-                <div class="text-center py-5 my-auto">
-                    <i class="fas fa-image fa-3x mb-3" style="color: #cbd5e1;"></i>
-                    <p class="text-muted mb-0" style="font-size: 14px;">No image selected for analysis</p>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+<div class="card border-0 shadow-sm" style="border-radius: 12px; background: white; padding: 1.4rem; min-height: 275px; display: flex; flex-direction: column; justify-content: center;">
+    <h5 class="fw-semibold mb-0" style="font-size: 16px; color: #1e293b;">Analysis Results</h5>
+    <div class="text-center py-5 my-auto">
+        <i class="fas fa-image fa-3x mb-3" style="color: #cbd5e1;"></i>
+        <p class="text-muted mb-0" style="font-size: 14px;">No image selected for analysis</p>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-    # 4. Recent Analyses Table
+    # 4. Recent Analyses Table (LEFT ALIGNED HTML TO PREVENT MARKDOWN CODE-BLOCK ESCAPING)
     table_rows_html = ""
     for d in detections[:10]:
         img_src = f"data:image/jpeg;base64,{d['b64']}" if d.get("b64") else "https://via.placeholder.com/60x60/f1f5f9/94a3b8?text=Cell"
@@ -841,101 +817,74 @@ def page_dashboard(detections):
         icon_name = "virus" if d["result"] == "Parasitized" else "shield-virus"
         conf_pct = round(d["confidence"] * 100, 1)
 
-        table_rows_html += f"""
-        <tr>
-            <td>
-                <img src="{img_src}" class="rounded" style="width: 58px; height: 58px; object-fit: cover; border: 1px solid #e5e7eb;" alt="Cell">
-            </td>
-            <td>
-                <div class="fw-bold" style="font-size: 13.5px; color: #1e293b;">{d['date_part']}</div>
-                <div class="text-muted small">{d['time_part']}</div>
-            </td>
-            <td>
-                <span class="badge-pill-custom {res_class}">
-                    <i class="fas fa-{icon_name}"></i> {d['result']}
-                </span>
-            </td>
-            <td>
-                <div class="progress-bar-wrap">
-                    <div class="progress-bar-bg">
-                        <div class="progress-bar-fill" style="width: {conf_pct}%;"></div>
-                    </div>
-                    <span class="fw-bold" style="font-size: 13px; color: #1e293b;">{conf_pct:.1f}%</span>
-                </div>
-            </td>
-            <td>
-                <a class="action-icon-btn" href="javascript:void(0)" title="View"><i class="fas fa-eye"></i></a>
-                <a class="action-icon-btn" href="javascript:void(0)" title="Download"><i class="fas fa-download"></i></a>
-                <a class="action-icon-btn btn-trash" href="javascript:void(0)" title="Delete"><i class="fas fa-trash"></i></a>
-            </td>
-        </tr>
-        """
+        table_rows_html += f"""<tr>
+<td><img src="{img_src}" class="rounded" style="width: 58px; height: 58px; object-fit: cover; border: 1px solid #e5e7eb;" alt="Cell"></td>
+<td><div class="fw-bold" style="font-size: 13.5px; color: #1e293b;">{d['date_part']}</div><div class="text-muted small">{d['time_part']}</div></td>
+<td><span class="badge-pill-custom {res_class}"><i class="fas fa-{icon_name}"></i> {d['result']}</span></td>
+<td><div class="progress-bar-wrap"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: {conf_pct}%;"></div></div><span class="fw-bold" style="font-size: 13px; color: #1e293b;">{conf_pct:.1f}%</span></div></td>
+<td><a class="action-icon-btn" href="javascript:void(0)" title="View"><i class="fas fa-eye"></i></a><a class="action-icon-btn" href="javascript:void(0)" title="Download"><i class="fas fa-download"></i></a><a class="action-icon-btn btn-trash" href="javascript:void(0)" title="Delete"><i class="fas fa-trash"></i></a></td>
+</tr>"""
 
     st.markdown(f"""
-    <div class="card border-0 shadow-sm mt-4" style="border-radius: 12px; background: white; overflow: hidden;">
-        <div class="p-3 px-4 d-flex justify-content-between align-items-center" style="border-bottom: 1px solid #e5e7eb;">
-            <h5 class="fw-semibold mb-0" style="font-size: 16px; color: #1e293b;">Recent Analyses</h5>
-            <div class="btn-group">
-                <button class="btn btn-outline-primary btn-sm px-3 me-2" style="border-radius: 6px; font-size: 13px;">
-                    <i class="fas fa-download me-1"></i> Export
-                </button>
-                <button class="btn btn-outline-primary btn-sm px-3" style="border-radius: 6px; font-size: 13px;">
-                    <i class="fas fa-filter me-1"></i> Filter
-                </button>
-            </div>
-        </div>
-        <div class="table-responsive">
-            <table class="table-custom">
-                <thead>
-                    <tr>
-                        <th style="width: 80px;">Image</th>
-                        <th style="width: 220px;">Date</th>
-                        <th style="width: 160px;">Result</th>
-                        <th>Confidence</th>
-                        <th style="width: 140px;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {table_rows_html}
-                </tbody>
-            </table>
+<div class="card border-0 shadow-sm mt-4" style="border-radius: 12px; background: white; overflow: hidden;">
+    <div class="p-3 px-4 d-flex justify-content-between align-items-center" style="border-bottom: 1px solid #e5e7eb;">
+        <h5 class="fw-semibold mb-0" style="font-size: 16px; color: #1e293b;">Recent Analyses</h5>
+        <div class="btn-group">
+            <button class="btn btn-outline-primary btn-sm px-3 me-2" style="border-radius: 6px; font-size: 13px;">
+                <i class="fas fa-download me-1"></i> Export
+            </button>
+            <button class="btn btn-outline-primary btn-sm px-3" style="border-radius: 6px; font-size: 13px;">
+                <i class="fas fa-filter me-1"></i> Filter
+            </button>
         </div>
     </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown('</div>', unsafe_allow_html=True)
+    <div class="table-responsive">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">Image</th>
+                    <th style="width: 220px;">Date</th>
+                    <th style="width: 160px;">Result</th>
+                    <th>Confidence</th>
+                    <th style="width: 140px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+{table_rows_html}
+            </tbody>
+        </table>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 
 # ─── Malaria Phases Page View ──────────────────────────────────────────────────
 def page_phases():
     render_top_header()
-    st.markdown('<div class="main-content-wrapper">', unsafe_allow_html=True)
     st.markdown("""
-    <div class="mb-4">
-        <h2 class="fw-bold mb-1" style="font-size: 22px; color: #1e293b;">Malaria Developmental Phases</h2>
-        <p class="text-muted mb-0" style="font-size: 13.5px;">Comprehensive clinical guide to Plasmodium falciparum erythrocytic cycle staging.</p>
-    </div>
-    """, unsafe_allow_html=True)
+<div class="mb-4">
+    <h2 class="fw-bold mb-1" style="font-size: 22px; color: #1e293b;">Malaria Developmental Phases</h2>
+    <p class="text-muted mb-0" style="font-size: 13.5px;">Comprehensive clinical guide to Plasmodium falciparum erythrocytic cycle staging.</p>
+</div>
+""", unsafe_allow_html=True)
 
     for _, p in PHASE_METADATA.items():
         st.markdown(f"""
-        <div class="card border-0 shadow-sm mb-3" style="border-radius: 12px; background: white; padding: 1.4rem; border-left: 5px solid {p['color']};">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <h5 class="fw-bold mb-0" style="color: #1e293b;">{p['name']}</h5>
-                <span class="badge {p['badge']} rounded-pill px-3 py-1">{p['timeline']}</span>
-            </div>
-            <p class="text-muted small mb-3">{p['description']}</p>
-            <div class="row g-2 small">
-                <div class="col-md-6"><strong>Morphology:</strong> {p['morphology']}</div>
-                <div class="col-md-6"><strong>Clinical Significance:</strong> {p['clinical']}</div>
-                <div class="col-12 mt-2 p-2 rounded" style="background: #f0fdf4; color: #166534;">
-                    <strong>Recommended Treatment:</strong> {p['treatment']}
-                </div>
-            </div>
+<div class="card border-0 shadow-sm mb-3" style="border-radius: 12px; background: white; padding: 1.4rem; border-left: 5px solid {p['color']};">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="fw-bold mb-0" style="color: #1e293b;">{p['name']}</h5>
+        <span class="badge {p['badge']} rounded-pill px-3 py-1">{p['timeline']}</span>
+    </div>
+    <p class="text-muted small mb-3">{p['description']}</p>
+    <div class="row g-2 small">
+        <div class="col-md-6"><strong>Morphology:</strong> {p['morphology']}</div>
+        <div class="col-md-6"><strong>Clinical Significance:</strong> {p['clinical']}</div>
+        <div class="col-12 mt-2 p-2 rounded" style="background: #f0fdf4; color: #166534;">
+            <strong>Recommended Treatment:</strong> {p['treatment']}
         </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown('</div>', unsafe_allow_html=True)
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 
 # ─── Main Application Router ───────────────────────────────────────────────────
@@ -949,7 +898,6 @@ def main():
 
     inject_full_css()
 
-    # Load detections once into session
     if "session_detections" not in st.session_state:
         st.session_state["session_detections"] = load_all_detections()
 

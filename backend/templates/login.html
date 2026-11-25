@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Malaria Detection System</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/logo.svg') }}">
+    
+    <!-- CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/auth.css') }}" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome-fallback.css') }}">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- SweetAlert2 -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="Logo" class="auth-logo">
+                <h1 class="auth-title">Welcome Back</h1>
+                <p class="auth-subtitle">Sign in to continue to your dashboard</p>
+            </div>
+
+            <form class="auth-form" id="loginForm" method="POST">
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" id="password" name="password" class="form-input" required>
+                    <i class="password-toggle fas fa-eye" onclick="togglePassword()"></i>
+                </div>
+
+                <div class="form-options">
+                    <div class="remember-me">
+                        <input type="checkbox" id="remember" name="remember">
+                        <label for="remember">Remember me</label>
+                    </div>
+                    <a href="#" class="forgot-password">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="auth-button" id="loginButton">
+                    Sign In
+                </button>
+
+                <div class="social-divider">or</div>
+
+                <div class="social-login">
+                    <button type="button" class="social-button" onclick="signInWithGoogle()">
+                        <img src="https://www.google.com/favicon.ico" alt="Google">
+                        <span>Sign in with Google</span>
+                    </button>
+                </div>
+            </form>
+
+            <div class="auth-footer">
+                Don't have an account? <a href="{{ url_for('main.signup_page') }}">Sign up</a>
+            </div>
+        </div>
+        </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    
+    <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDp7O_ymfpavylfIeNXO9wUwCi8xi9HGEI",
+            authDomain: "malaria-detection-71269.firebaseapp.com",
+            projectId: "malaria-detection-71269",
+            storageBucket: "malaria-detection-71269.firebasestorage.app",
+            messagingSenderId: "588111581098",
+            appId: "1:588111581098:web:5f9aa15f1e2d5e325c65d3",
+            measurementId: "G-KG7N8E3BB7"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        // Toggle password visibility
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const icon = document.querySelector('.password-toggle');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Handle form submission
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const button = document.getElementById('loginButton');
+            button.disabled = true;
+            button.classList.add('loading');
+
+            try {
+                const formData = new FormData(e.target);
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        email: formData.get('email'),
+                        password: formData.get('password')
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'You have been successfully logged in.',
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        window.location.href = '{{ url_for("main.dashboard") }}';
+                    });
+                } else {
+                    throw new Error(data.error || 'Login failed');
+                }
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message,
+                    confirmButtonColor: '#2563eb'
+                });
+            } finally {
+                button.disabled = false;
+                button.classList.remove('loading');
+            }
+        });
+
+        // Google Sign In
+        function signInWithGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            firebase.auth().signInWithPopup(provider)
+                .then((result) => {
+                    // Get the ID token
+                    return result.user.getIdToken().then(idToken => {
+                        // Send the ID token to the backend
+                        return fetch('/api/google-login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                token: idToken
+                            })
+                        });
+                    });
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = '{{ url_for("main.dashboard") }}';
+                    } else {
+                        throw new Error(data.error || 'Google sign-in failed');
+                    }
+                })
+                .catch((error) => {
+                    console.error('Google Sign In Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Authentication Failed',
+                        text: error.message || 'Failed to sign in with Google. Please try again.',
+                        confirmButtonColor: '#2563eb'
+                    });
+                });
+        }
+    </script>
+</body>
+</html>

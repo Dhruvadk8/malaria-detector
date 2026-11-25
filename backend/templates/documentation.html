@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block title %}Documentation - MalariaScope Pro{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">Documentation</h1>
+        <p class="text-muted mb-0">Learn how to use MalariaScope Pro effectively.</p>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-outline-primary" onclick="window.print()">
+            <i class="fas fa-print me-2"></i>Print Guide
+        </button>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-3">
+        <!-- Navigation Sidebar -->
+        <div class="card border-0 shadow-sm sticky-top" style="top: 90px;">
+            <div class="card-body">
+                <nav class="nav flex-column doc-nav">
+                    <a class="nav-link active" href="#getting-started">
+                        <i class="fas fa-rocket me-2"></i>Getting Started
+                    </a>
+                    <a class="nav-link" href="#uploading-images">
+                        <i class="fas fa-upload me-2"></i>Uploading Images
+                    </a>
+                    <a class="nav-link" href="#analysis-process">
+                        <i class="fas fa-microscope me-2"></i>Analysis Process
+                    </a>
+                    <a class="nav-link" href="#interpreting-results">
+                        <i class="fas fa-chart-bar me-2"></i>Interpreting Results
+                    </a>
+                    <a class="nav-link" href="#managing-history">
+                        <i class="fas fa-history me-2"></i>Managing History
+                    </a>
+                    <a class="nav-link" href="#best-practices">
+                        <i class="fas fa-check-circle me-2"></i>Best Practices
+                    </a>
+                    <a class="nav-link" href="#troubleshooting">
+                        <i class="fas fa-wrench me-2"></i>Troubleshooting
+                    </a>
+                    <a class="nav-link" href="#faq">
+                        <i class="fas fa-question-circle me-2"></i>FAQ
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-9">
+        <!-- Documentation Content -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <!-- Getting Started -->
+                <section id="getting-started" class="mb-5">
+                    <h2 class="mb-4">Getting Started</h2>
+                    <p>Welcome to MalariaScope Pro! This guide will help you understand how to use our AI-powered malaria detection system effectively.</p>
+                    
+                    <h4 class="mt-4">System Requirements</h4>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success me-2"></i>Modern web browser (Chrome, Firefox, Safari)</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Internet connection</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Digital microscope or scanner for blood smear images</li>
+                    </ul>
+                </section>
+
+                <!-- Uploading Images -->
+                <section id="uploading-images" class="mb-5">
+                    <h2 class="mb-4">Uploading Images</h2>
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle me-2"></i>Image Requirements</h5>
+                        <ul class="mb-0">
+                            <li>Supported formats: PNG, JPG, JPEG, TIFF</li>
+                            <li>Maximum file size: 5MB</li>
+                            <li>Recommended resolution: 1024x1024 pixels or higher</li>
+                            <li>Clear, well-focused blood smear images</li>
+                        </ul>
+                    </div>
+                    
+                    <h4 class="mt-4">Upload Methods</h4>
+                    <ol>
+                        <li>Drag and drop files directly onto the upload area</li>
+                        <li>Click the upload area to browse your files</li>
+                        <li>Use the "New Analysis" button from any page</li>
+                    </ol>
+                </section>
+
+                <!-- Analysis Process -->
+                <section id="analysis-process" class="mb-5">
+                    <h2 class="mb-4">Analysis Process</h2>
+                    <div class="process-steps">
+                        <div class="step mb-4">
+                            <div class="step-number bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 40px; height: 40px;">1</div>
+                            <h5>Image Upload</h5>
+                            <p>Upload your blood smear image using any of the supported methods.</p>
+                        </div>
+                        <div class="step mb-4">
+                            <div class="step-number bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 40px; height: 40px;">2</div>
+                            <h5>AI Analysis</h5>
+                            <p>Our AI model processes the image to detect malaria parasites.</p>
+                        </div>
+                        <div class="step mb-4">
+                            <div class="step-number bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 40px; height: 40px;">3</div>
+                            <h5>Results</h5>
+                            <p>View detailed results including detection confidence and recommendations.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Interpreting Results -->
+                <section id="interpreting-results" class="mb-5">
+                    <h2 class="mb-4">Interpreting Results</h2>
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title text-danger">
+                                        <i class="fas fa-virus me-2"></i>Parasitized
+                                    </h5>
+                                    <p>Indicates the presence of malaria parasites in the blood sample.</p>
+                                    <ul>
+                                        <li>Red warning indicator</li>
+                                        <li>Confidence score above 50%</li>
+                                        <li>Requires immediate attention</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title text-success">
+                                        <i class="fas fa-shield-virus me-2"></i>Uninfected
+                                    </h5>
+                                    <p>No malaria parasites detected in the blood sample.</p>
+                                    <ul>
+                                        <li>Green success indicator</li>
+                                        <li>Confidence score above 50%</li>
+                                        <li>Regular monitoring recommended</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Managing History -->
+                <section id="managing-history" class="mb-5">
+                    <h2 class="mb-4">Managing History</h2>
+                    <p>Keep track of all your analyses and monitor trends over time:</p>
+                    <ul>
+                        <li>View complete analysis history</li>
+                        <li>Filter and sort results</li>
+                        <li>Export reports for record-keeping</li>
+                        <li>Track detection trends and patterns</li>
+                    </ul>
+                </section>
+
+                <!-- Best Practices -->
+                <section id="best-practices" class="mb-5">
+                    <h2 class="mb-4">Best Practices</h2>
+                    <div class="alert alert-success">
+                        <h5><i class="fas fa-lightbulb me-2"></i>Tips for Best Results</h5>
+                        <ul class="mb-0">
+                            <li>Use high-quality microscope images</li>
+                            <li>Ensure proper lighting and focus</li>
+                            <li>Clean and properly stained slides</li>
+                            <li>Regular system calibration</li>
+                            <li>Keep records of all analyses</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Troubleshooting -->
+                <section id="troubleshooting" class="mb-5">
+                    <h2 class="mb-4">Troubleshooting</h2>
+                    <div class="accordion" id="troubleshootingAccordion">
+                        <div class="accordion-item">
+                            <h3 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#uploadIssues">
+                                    Upload Issues
+                                </button>
+                            </h3>
+                            <div id="uploadIssues" class="accordion-collapse collapse show" data-bs-parent="#troubleshootingAccordion">
+                                <div class="accordion-body">
+                                    <ul>
+                                        <li>Check file format and size</li>
+                                        <li>Ensure stable internet connection</li>
+                                        <li>Clear browser cache</li>
+                                        <li>Try a different browser</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h3 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#analysisIssues">
+                                    Analysis Issues
+                                </button>
+                            </h3>
+                            <div id="analysisIssues" class="accordion-collapse collapse" data-bs-parent="#troubleshootingAccordion">
+                                <div class="accordion-body">
+                                    <ul>
+                                        <li>Verify image quality</li>
+                                        <li>Check for proper staining</li>
+                                        <li>Ensure correct focus</li>
+                                        <li>Try reprocessing the image</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- FAQ -->
+                <section id="faq">
+                    <h2 class="mb-4">Frequently Asked Questions</h2>
+                    <div class="accordion" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h3 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                    How accurate is the AI detection?
+                                </button>
+                            </h3>
+                            <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Our AI model achieves over 95% accuracy on properly prepared blood smear images. However, results should always be verified by a qualified healthcare professional.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h3 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                    Can I export my analysis results?
+                                </button>
+                            </h3>
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Yes, you can export individual analysis results or generate comprehensive reports from the Analysis History page.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_styles %}
+<style>
+    .doc-nav .nav-link {
+        color: #4b5563;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+    }
+
+    .doc-nav .nav-link:hover,
+    .doc-nav .nav-link.active {
+        color: var(--primary-color);
+        background-color: rgba(37, 99, 235, 0.1);
+    }
+
+    section {
+        scroll-margin-top: 100px;
+    }
+
+    .accordion-button:not(.collapsed) {
+        background-color: rgba(37, 99, 235, 0.1);
+        color: var(--primary-color);
+    }
+
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: rgba(37, 99, 235, 0.1);
+    }
+
+    @media print {
+        .sidebar,
+        .dashboard-header,
+        .doc-nav,
+        .btn-group {
+            display: none !important;
+        }
+
+        .main-content {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        section {
+            page-break-inside: avoid;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block additional_scripts %}
+<script>
+    // Smooth scrolling for documentation links
+    document.querySelectorAll('.doc-nav a').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = link.getAttribute('href');
+            const targetElement = document.querySelector(targetId);
+            if (targetElement) {
+                targetElement.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    });
+
+    // Update active nav link on scroll
+    window.addEventListener('scroll', () => {
+        const sections = document.querySelectorAll('section');
+        const navLinks = document.querySelectorAll('.doc-nav .nav-link');
+
+        let currentSection = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop - 120;
+            if (window.pageYOffset >= sectionTop) {
+                currentSection = '#' + section.getAttribute('id');
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === currentSection) {
+                link.classList.add('active');
+            }
+        });
+    });
+</script>
+{% endblock %} 

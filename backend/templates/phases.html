@@ -1,0 +1,435 @@
+{% extends "base.html" %}
+
+{% block title %}Phases of Malaria - MalariaScope Pro{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1"><i class="fas fa-project-diagram text-primary me-2"></i>Phases of Malaria</h1>
+        <p class="text-muted mb-0">Comprehensive clinical and microscopic developmental staging of <em>Plasmodium</em> infection.</p>
+    </div>
+    <div class="btn-group">
+        <a href="{{ url_for('main.new_analysis') }}" class="btn btn-primary">
+            <i class="fas fa-microscope me-2"></i>Analyze Blood Smear
+        </a>
+    </div>
+</div>
+
+<!-- Quick Phase Metric Counters -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm border-start border-info border-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold">Phase 1: Ring Stage</span>
+                        <h3 class="mb-0 mt-1 text-info">{{ ring_count or 0 }}</h3>
+                        <small class="text-muted">0 - 18 hrs intraerythrocytic</small>
+                    </div>
+                    <div class="bg-info bg-opacity-10 text-info p-3 rounded-circle">
+                        <i class="fas fa-ring fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm border-start border-warning border-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold">Phase 2: Trophozoite</span>
+                        <h3 class="mb-0 mt-1 text-warning">{{ trophozoite_count or 0 }}</h3>
+                        <small class="text-muted">18 - 36 hrs active feeding</small>
+                    </div>
+                    <div class="bg-warning bg-opacity-10 text-warning p-3 rounded-circle">
+                        <i class="fas fa-bacterium fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm border-start border-danger border-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold">Phase 3: Schizont</span>
+                        <h3 class="mb-0 mt-1 text-danger">{{ schizont_count or 0 }}</h3>
+                        <small class="text-muted">36 - 48 hrs pre-rupture</small>
+                    </div>
+                    <div class="bg-danger bg-opacity-10 text-danger p-3 rounded-circle">
+                        <i class="fas fa-certificate fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm border-start border-primary border-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold">Phase 4: Gametocyte</span>
+                        <h3 class="mb-0 mt-1 text-primary">{{ gametocyte_count or 0 }}</h3>
+                        <small class="text-muted">Sexual transmission</small>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-circle">
+                        <i class="fas fa-dna fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Intraerythrocytic Cycle Timeline Progression -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <h5 class="card-title mb-3"><i class="fas fa-clock text-primary me-2"></i>48-Hour Intraerythrocytic Asexual Cycle</h5>
+        <p class="text-muted small mb-4">Following merozoite invasion of an erythrocyte, the malaria parasite progresses through distinct biological phases over a 48-hour cycle (specifically in <em>P. falciparum</em> and <em>P. vivax</em>):</p>
+        
+        <div class="position-relative m-4">
+            <div class="progress" style="height: 6px;">
+                <div class="progress-bar bg-gradient-stages" role="progressbar" style="width: 100%;"></div>
+            </div>
+            <div class="d-flex justify-content-between position-relative" style="top: -18px;">
+                <div class="text-center" style="width: 20%;">
+                    <div class="stage-milestone bg-info text-white rounded-circle mx-auto d-flex align-items-center justify-content-center shadow-sm">1</div>
+                    <div class="fw-bold mt-2 text-info">Ring Stage</div>
+                    <span class="badge bg-light text-dark border">0 - 18 hrs</span>
+                </div>
+                <div class="text-center" style="width: 20%;">
+                    <div class="stage-milestone bg-warning text-dark rounded-circle mx-auto d-flex align-items-center justify-content-center shadow-sm">2</div>
+                    <div class="fw-bold mt-2 text-warning">Trophozoite</div>
+                    <span class="badge bg-light text-dark border">18 - 36 hrs</span>
+                </div>
+                <div class="text-center" style="width: 20%;">
+                    <div class="stage-milestone bg-danger text-white rounded-circle mx-auto d-flex align-items-center justify-content-center shadow-sm">3</div>
+                    <div class="fw-bold mt-2 text-danger">Schizont</div>
+                    <span class="badge bg-light text-dark border">36 - 48 hrs</span>
+                </div>
+                <div class="text-center" style="width: 20%;">
+                    <div class="stage-milestone bg-primary text-white rounded-circle mx-auto d-flex align-items-center justify-content-center shadow-sm">4</div>
+                    <div class="fw-bold mt-2 text-primary">Gametocyte</div>
+                    <span class="badge bg-light text-dark border">Transmission</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Erythrocytic Stages Cards -->
+<div class="row g-4 mb-5">
+    <!-- 1. Ring Stage -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100 phase-card">
+            <div class="card-header bg-white border-bottom py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-info text-dark mb-1">Phase 1: Early Erythrocytic</span>
+                        <h4 class="mb-0 text-dark">Ring Stage (Early Trophozoite)</h4>
+                    </div>
+                    <div class="phase-icon-box bg-info text-dark">
+                        <i class="fas fa-ring fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="stage-spec mb-3 p-3 bg-light rounded">
+                    <div class="row g-2 text-sm">
+                        <div class="col-6"><strong><i class="fas fa-stopwatch me-1 text-info"></i> Timeline:</strong> 0 to 18 Hours</div>
+                        <div class="col-6"><strong><i class="fas fa-chart-pie me-1 text-info"></i> Cell Area:</strong> 5% - 15% of RBC</div>
+                        <div class="col-6"><strong><i class="fas fa-exclamation-triangle me-1 text-info"></i> Clinical Severity:</strong> Early / Mild</div>
+                        <div class="col-6"><strong><i class="fas fa-pills me-1 text-info"></i> Drug Sensitivity:</strong> Highly Sensitive to ACT</div>
+                    </div>
+                </div>
+                
+                <h6 class="fw-bold text-dark"><i class="fas fa-microscope text-primary me-2"></i>Morphological Identifiers</h6>
+                <ul class="text-muted small">
+                    <li>Classic <strong>"signet-ring" appearance</strong> with a thin, circular cytoplasmic band and central vacuole.</li>
+                    <li>Single, prominent, condensed red/purple chromatin dot on one side.</li>
+                    <li>Red blood cell preserves normal size, shape, and staining without marked deformation.</li>
+                    <li>Multiple rings in a single RBC frequently indicate high parasitemia (<em>P. falciparum</em>).</li>
+                </ul>
+
+                <h6 class="fw-bold text-dark mt-3"><i class="fas fa-heartbeat text-danger me-2"></i>Clinical & Pathological Impact</h6>
+                <p class="text-muted small mb-3">Young rings circulate openly in peripheral capillary beds. Since cytoadherence knobs have not yet fully formed on the erythrocyte membrane, this stage represents the optimal window for curative therapeutic intervention.</p>
+                
+                <div class="alert alert-info py-2 px-3 small mb-0">
+                    <strong><i class="fas fa-check-circle me-1"></i>WHO Recommendation:</strong> Standard 3-day oral Artemisinin-based Combination Therapy (ACT), e.g., Artemether-Lumefantrine.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Mature Trophozoite -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100 phase-card">
+            <div class="card-header bg-white border-bottom py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-warning text-dark mb-1">Phase 2: Active Metabolic</span>
+                        <h4 class="mb-0 text-dark">Mature Trophozoite Stage</h4>
+                    </div>
+                    <div class="phase-icon-box bg-warning text-dark">
+                        <i class="fas fa-bacterium fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="stage-spec mb-3 p-3 bg-light rounded">
+                    <div class="row g-2 text-sm">
+                        <div class="col-6"><strong><i class="fas fa-stopwatch me-1 text-warning"></i> Timeline:</strong> 18 to 36 Hours</div>
+                        <div class="col-6"><strong><i class="fas fa-chart-pie me-1 text-warning"></i> Cell Area:</strong> 20% - 45% of RBC</div>
+                        <div class="col-6"><strong><i class="fas fa-exclamation-triangle me-1 text-warning"></i> Clinical Severity:</strong> Moderate / Active Sickness</div>
+                        <div class="col-6"><strong><i class="fas fa-fire me-1 text-warning"></i> Fever Triggers:</strong> Pyrogen release begins</div>
+                    </div>
+                </div>
+                
+                <h6 class="fw-bold text-dark"><i class="fas fa-microscope text-primary me-2"></i>Morphological Identifiers</h6>
+                <ul class="text-muted small">
+                    <li>Amoeboid, irregular cytoplasmic borders with prominent thickening.</li>
+                    <li>Accumulation of distinctive golden-brown to dark black <strong>hemozoin pigment granules</strong> (malaria pigment).</li>
+                    <li>RBC may show Schüffner's dots (in <em>P. vivax</em>) or Maurer's clefts (in <em>P. falciparum</em>).</li>
+                    <li>Vacuole becomes less conspicuous as cytoplasmic volume expands.</li>
+                </ul>
+
+                <h6 class="fw-bold text-dark mt-3"><i class="fas fa-heartbeat text-danger me-2"></i>Clinical & Pathological Impact</h6>
+                <p class="text-muted small mb-3">Parasite actively digests erythrocyte hemoglobin inside digestive vacuoles. Expresses PfEMP1 adhesion ligands causing sequestration in deep capillary beds of brain, lungs, and kidneys.</p>
+                
+                <div class="alert alert-warning py-2 px-3 small mb-0">
+                    <strong><i class="fas fa-check-circle me-1"></i>WHO Recommendation:</strong> Rapid initiation of ACT. Supplement with Paracetamol for temperature control and oral hydration.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Schizont Stage -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100 phase-card">
+            <div class="card-header bg-white border-bottom py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-danger text-white mb-1">Phase 3: Critical Pre-Lytic</span>
+                        <h4 class="mb-0 text-dark">Schizont Stage (Asexual Multiplication)</h4>
+                    </div>
+                    <div class="phase-icon-box bg-danger text-white">
+                        <i class="fas fa-certificate fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="stage-spec mb-3 p-3 bg-light rounded">
+                    <div class="row g-2 text-sm">
+                        <div class="col-6"><strong><i class="fas fa-stopwatch me-1 text-danger"></i> Timeline:</strong> 36 to 48 Hours</div>
+                        <div class="col-6"><strong><i class="fas fa-chart-pie me-1 text-danger"></i> Cell Area:</strong> 40% - 75%+ of RBC</div>
+                        <div class="col-6"><strong><i class="fas fa-exclamation-triangle me-1 text-danger"></i> Clinical Severity:</strong> High / Critical Paroxysm</div>
+                        <div class="col-6"><strong><i class="fas fa-burst me-1 text-danger"></i> Merozoites:</strong> 8 to 24 per cell</div>
+                    </div>
+                </div>
+                
+                <h6 class="fw-bold text-dark"><i class="fas fa-microscope text-primary me-2"></i>Morphological Identifiers</h6>
+                <ul class="text-muted small">
+                    <li>Multiple distinct chromatin masses formed through nuclear division (schizogony).</li>
+                    <li>Cluster of <strong>8 to 24 individual merozoites</strong> surrounding a dense central clump of dark hemozoin pigment.</li>
+                    <li>Host erythrocyte is stretched, swollen, or ruptured.</li>
+                    <li>Mature schizonts of <em>P. falciparum</em> are rarely seen in peripheral blood due to intense deep tissue sequestration.</li>
+                </ul>
+
+                <h6 class="fw-bold text-dark mt-3"><i class="fas fa-heartbeat text-danger me-2"></i>Clinical & Pathological Impact</h6>
+                <p class="text-muted small mb-3">Rupture of schizonts releases synchronous waves of merozoites, hemozoin, and glycosylphosphatidylinositol (GPI), triggering violent cytokine storms (TNF-α, IL-1), severe rigor, and acute hemolytic anemia.</p>
+                
+                <div class="alert alert-danger py-2 px-3 small mb-0">
+                    <strong><i class="fas fa-exclamation-circle me-1"></i>Emergency Protocol:</strong> Intensive clinical monitoring. If danger signs appear (delirium, jaundice, prostration), start IV Artesunate immediately.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Gametocyte Stage -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100 phase-card">
+            <div class="card-header bg-white border-bottom py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-primary text-white mb-1">Phase 4: Transmission Stage</span>
+                        <h4 class="mb-0 text-dark">Gametocyte Stage (Sexual Precursor)</h4>
+                    </div>
+                    <div class="phase-icon-box bg-primary text-white">
+                        <i class="fas fa-dna fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="stage-spec mb-3 p-3 bg-light rounded">
+                    <div class="row g-2 text-sm">
+                        <div class="col-6"><strong><i class="fas fa-stopwatch me-1 text-primary"></i> Timeline:</strong> Transmission Stage</div>
+                        <div class="col-6"><strong><i class="fas fa-chart-pie me-1 text-primary"></i> Cell Area:</strong> Fills entire distorted RBC</div>
+                        <div class="col-6"><strong><i class="fas fa-mosquito me-1 text-primary"></i> Vector:</strong> Infectious to Anopheles</div>
+                        <div class="col-6"><strong><i class="fas fa-shield-alt me-1 text-primary"></i> Goal:</strong> Transmission blocking</div>
+                    </div>
+                </div>
+                
+                <h6 class="fw-bold text-dark"><i class="fas fa-microscope text-primary me-2"></i>Morphological Identifiers</h6>
+                <ul class="text-muted small">
+                    <li>Elongated, <strong>banana- or crescent-shaped</strong> morphology characteristic of <em>P. falciparum</em>.</li>
+                    <li>Rounded or compact spherical sexual precursors in <em>P. vivax</em> / <em>P. malariae</em>.</li>
+                    <li>Microgametocyte (male): diffuse, pale blue-pink cytoplasm with dispersed chromatin.</li>
+                    <li>Macrogametocyte (female): deep blue cytoplasm with compact central chromatin and coarse pigment.</li>
+                </ul>
+
+                <h6 class="fw-bold text-dark mt-3"><i class="fas fa-heartbeat text-danger me-2"></i>Clinical & Pathological Impact</h6>
+                <p class="text-muted small mb-3">Gametocytes do not cause acute pathology or red cell destruction in humans. However, they circulate in blood for weeks, allowing mosquitoes to transmit malaria to others.</p>
+                
+                <div class="alert alert-primary py-2 px-3 small mb-0">
+                    <strong><i class="fas fa-check-circle me-1"></i>WHO Recommendation:</strong> Add single low-dose Primaquine (0.25 mg/kg) to ACT to clear gametocytes and prevent vector transmission.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Classical Clinical Malaria Paroxysm Phases -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <h4 class="card-title mb-1"><i class="fas fa-thermometer-three-quarters text-danger me-2"></i>The 3 Clinical Phases of a Malaria Paroxysm</h4>
+        <p class="text-muted small mb-4">A classical malaria attack coincides with synchronous schizont rupture every 48 hours (tertian fever) or 72 hours (quartan fever):</p>
+        
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="p-3 border rounded h-100 bg-light">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-primary me-2">1</span>
+                        <h5 class="mb-0 text-primary">Cold Stage (Chills)</h5>
+                    </div>
+                    <small class="badge bg-secondary mb-2">Duration: 15 to 60 Minutes</small>
+                    <p class="text-muted small mt-2">
+                        Patient experiences sudden, uncontrollable shivering, teeth-chattering, cyanotic lips, and goosebumps despite high rising core body temperature. Peripheral blood vessels constrict sharply.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="p-3 border rounded h-100 bg-light">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-danger me-2">2</span>
+                        <h5 class="mb-0 text-danger">Hot Stage (Fever)</h5>
+                    </div>
+                    <small class="badge bg-secondary mb-2">Duration: 2 to 6 Hours</small>
+                    <p class="text-muted small mt-2">
+                        Core temperature peaks between 39°C and 41°C. Burning dry skin, intense throbbing headache, tachycardia, tachypnea, severe nausea, vomiting, and delirium in severe cases.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="p-3 border rounded h-100 bg-light">
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-success me-2">3</span>
+                        <h5 class="mb-0 text-success">Sweating Stage</h5>
+                    </div>
+                    <small class="badge bg-secondary mb-2">Duration: 2 to 4 Hours</small>
+                    <p class="text-muted small mt-2">
+                        Massive, profuse sweating (diaphoresis). Body temperature falls rapidly to normal or subnormal levels. The patient feels exhausted and falls into deep sleep until the next cycle.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Comparison & Laboratory Diagnostic Guide Table -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3">
+        <h5 class="mb-0"><i class="fas fa-table text-primary me-2"></i>Microscopic Staging Reference Matrix</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Phase / Stage</th>
+                        <th>Cycle Time</th>
+                        <th>Key Visual Features</th>
+                        <th>RBC Size & Shape</th>
+                        <th>Pigment (Hemozoin)</th>
+                        <th>Clinical Urgency</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge bg-info text-dark"><i class="fas fa-ring me-1"></i>Ring Stage</span></td>
+                        <td>0 - 18 hrs</td>
+                        <td>Delicate ring, 1-2 small chromatin dots</td>
+                        <td>Normal RBC size</td>
+                        <td>None / Inconspicuous</td>
+                        <td><span class="badge bg-success">Standard ACT</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge bg-warning text-dark"><i class="fas fa-bacterium me-1"></i>Mature Trophozoite</span></td>
+                        <td>18 - 36 hrs</td>
+                        <td>Thick amoeboid mass, irregular contours</td>
+                        <td>May be slightly enlarged</td>
+                        <td>Scattered brown/black granules</td>
+                        <td><span class="badge bg-warning text-dark">Urgent ACT</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge bg-danger text-white"><i class="fas fa-certificate me-1"></i>Schizont Stage</span></td>
+                        <td>36 - 48 hrs</td>
+                        <td>8 to 24 dividing merozoite clusters</td>
+                        <td>Distended, swollen, or ruptured</td>
+                        <td>Dense central pigment clump</td>
+                        <td><span class="badge bg-danger">Critical Care</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge bg-primary text-white"><i class="fas fa-dna me-1"></i>Gametocyte</span></td>
+                        <td>Transmission</td>
+                        <td>Crescent / banana or large compact disk</td>
+                        <td>Distorted crescent envelope</td>
+                        <td>Coarse central pigment grains</td>
+                        <td><span class="badge bg-primary">Add Primaquine</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge bg-success text-white"><i class="fas fa-shield-virus me-1"></i>Healthy Cell</span></td>
+                        <td>N/A</td>
+                        <td>Clear biconcave disc, central pallor</td>
+                        <td>Standard 6-8 μm diameter</td>
+                        <td>None</td>
+                        <td><span class="badge bg-light text-dark border">Negative</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_styles %}
+<style>
+    .phase-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .phase-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+    }
+    .phase-icon-box {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .stage-milestone {
+        width: 38px;
+        height: 38px;
+        font-weight: 700;
+        font-size: 16px;
+    }
+    .bg-gradient-stages {
+        background: linear-gradient(90deg, #0dcaf0 0%, #ffc107 40%, #dc3545 75%, #0d6efd 100%);
+    }
+</style>
+{% endblock %}

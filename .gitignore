@@ -1,0 +1,26 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+
+# Backend
+backend/logs/
+backend/instance/
+backend/dataset/
+backend/processed_dataset/
+backend/static/uploads/*
+!backend/static/uploads/.gitkeep
+backend/backend/
+
+# Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# OS & Environment
+.DS_Store
+Thumbs.db
+.env

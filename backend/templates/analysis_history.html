@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis History - MalariaScope Pro{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1"><i class="fas fa-history text-primary me-2"></i>Analysis History</h1>
+        <p class="text-muted mb-0">View, filter, and review your previous malaria detection and phase staging analyses.</p>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-outline-primary" onclick="exportHistoryCSV()">
+            <i class="fas fa-download me-2"></i>Export History
+        </button>
+        <button class="btn btn-outline-secondary" onclick="filterHistoryByStage()">
+            <i class="fas fa-filter me-2"></i>Filter by Phase
+        </button>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="history-table">
+                <thead class="bg-light">
+                    <tr>
+                        <th style="width: 80px;">Slide</th>
+                        <th>Date & Time</th>
+                        <th>Diagnosis</th>
+                        <th>Parasite Phase / Stage</th>
+                        <th>Confidence</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detection in detections %}
+                    <tr>
+                        <td>
+                            <img src="{{ detection.image_url }}" alt="Analysis Image" class="rounded border" style="width: 55px; height: 55px; object-fit: cover;" onerror="this.src='/static/images/th.jpeg'">
+                        </td>
+                        <td>
+                            <div class="fw-semibold text-dark">{{ detection.created_at.strftime('%B %d, %Y') if detection.created_at else 'Unknown Date' }}</div>
+                            <div class="text-muted small">{{ detection.created_at.strftime('%I:%M %p') if detection.created_at else '' }}</div>
+                        </td>
+                        <td>
+                            <span class="badge {{ 'bg-danger' if detection.result == 'Parasitized' else 'bg-success' }} rounded-pill px-3 py-2">
+                                <i class="fas fa-{{ 'virus' if detection.result == 'Parasitized' else 'shield-virus' }} me-1"></i>
+                                {{ detection.result }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge {{ detection.stage_badge_class }} rounded-pill px-3 py-2">
+                                <i class="fas fa-project-diagram me-1"></i>
+                                {{ detection.parasite_stage or ('Parasitized' if detection.result == 'Parasitized' else 'Healthy') }}
+                            </span>
+                            {% if detection.stage_confidence %}
+                            <div class="text-muted small mt-1">Match: {{ "%.1f"|format(detection.stage_confidence * 100) }}%</div>
+                            {% endif %}
+                        </td>
+                        <td style="min-width: 140px;">
+                            <div class="d-flex align-items-center">
+                                <div class="progress flex-grow-1" style="height: 6px;">
+                                    <div class="progress-bar {{ 'bg-danger' if detection.result == 'Parasitized' else 'bg-success' }}"
+                                         role="progressbar"
+                                         style="width: {{ '%.1f'|format(detection.confidence * 100) }}%;">
+                                    </div>
+                                </div>
+                                <span class="ms-2 fw-semibold small">{{ "%.1f"|format(detection.confidence * 100) }}%</span>
+                            </div>
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        data-id="{{ detection.id }}"
+                                        data-result="{{ detection.result }}"
+                                        data-stage="{{ detection.parasite_stage or ('Parasitized' if detection.result == 'Parasitized' else 'Healthy') }}"
+                                        data-confidence="{{ '%.1f'|format(detection.confidence * 100) }}"
+                                        data-stage-conf="{{ '%.1f'|format((detection.stage_confidence or detection.confidence) * 100) }}"
+                                        data-image="{{ detection.image_url }}"
+                                        data-heatmap="{{ detection.heatmap_path or '' }}"
+                                        data-date="{{ detection.created_at.strftime('%B %d, %Y %I:%M %p') if detection.created_at else '' }}"
+                                        onclick="showDetectionDetails(this)" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="downloadSingleReport({{ detection.id }}, '{{ detection.result }}', '{{ detection.parasite_stage or '' }}', '{{ '%.1f'|format(detection.confidence * 100) }}%')" title="Download Report">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteHistoryItem({{ detection.id }}, this)" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="fas fa-microscope fa-3x mb-3 text-secondary"></i>
+                            <h5>No analysis records found</h5>
+                            <p class="small mb-3">Upload your first blood smear slide to start detection.</p>
+                            <a href="{{ url_for('main.new_analysis') }}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus me-1"></i>New Analysis
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_scripts %}
+<script>
+    function showDetectionDetails(btn) {
+        const id = btn.getAttribute('data-id');
+        const result = btn.getAttribute('data-result');
+        const stage = btn.getAttribute('data-stage');
+        const confidence = btn.getAttribute('data-confidence');
+        const stageConf = btn.getAttribute('data-stage-conf');
+        const image = btn.getAttribute('data-image');
+        const heatmap = btn.getAttribute('data-heatmap');
+        const date = btn.getAttribute('data-date');
+        const isParasitized = (result === 'Parasitized');
+
+        let html = `
+            <div class="text-center mb-3">
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <small class="text-muted d-block mb-1">Microscopic Slide</small>
+                        <img src="${image}" class="img-fluid rounded border shadow-sm" style="max-height: 180px; object-fit: contain;">
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block mb-1">Grad-CAM Heatmap</small>
+                        <img src="${heatmap || image}" class="img-fluid rounded border shadow-sm" style="max-height: 180px; object-fit: contain;">
+                    </div>
+                </div>
+
+                <div class="alert ${isParasitized ? 'alert-danger' : 'alert-success'} py-2 mb-3">
+                    <h5 class="mb-0">${result} (${confidence}% Overall Confidence)</h5>
+                </div>
+
+                <div class="card bg-light border p-3 text-start mb-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small text-uppercase fw-bold"><i class="fas fa-project-diagram me-1 text-primary"></i> Staged Phase:</span>
+                        <span class="badge ${isParasitized ? 'bg-danger' : 'bg-success'} fs-6">${stage}</span>
+                    </div>
+                    <p class="small text-muted mb-1"><strong>Phase Accuracy Match:</strong> ${stageConf}%</p>
+                    <p class="small text-muted mb-0"><strong>Timestamp:</strong> ${date}</p>
+                </div>
+            </div>
+        `;
+
+        Swal.fire({
+            title: `Analysis Details #${id}`,
+            html: html,
+            width: '650px',
+            confirmButtonText: 'Close',
+            confirmButtonColor: '#2563eb'
+        });
+    }
+
+    function downloadSingleReport(id, result, stage, confidence) {
+        const reportText = `MALARIA SCOPE PRO - DIAGNOSTIC REPORT\n` +
+                           `Report ID: #${id}\n` +
+                           `Date: ${new Date().toLocaleDateString()}\n` +
+                           `Diagnosis: ${result}\n` +
+                           `Malaria Phase: ${stage || 'N/A'}\n` +
+                           `Confidence: ${confidence}\n` +
+                           `Verified by AI Deep Learning & Grad-CAM Explainability Engine\n`;
+        
+        const blob = new Blob([reportText], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Malaria_Report_${id}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+
+    function exportHistoryCSV() {
+        const rows = document.querySelectorAll('#history-table tbody tr');
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Date,Diagnosis,Malaria_Phase,Confidence\n";
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 5) {
+                const date = cells[1].innerText.replace(/\n/g, ' ').trim();
+                const diagnosis = cells[2].innerText.trim();
+                const phase = cells[3].innerText.replace(/\n/g, ' ').trim();
+                const confidence = cells[4].innerText.trim();
+                csvContent += `"${date}","${diagnosis}","${phase}","${confidence}"\n`;
+            }
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `malaria_history_export_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function filterHistoryByStage() {
+        Swal.fire({
+            title: 'Filter by Malaria Phase',
+            input: 'select',
+            inputOptions: {
+                'all': 'Show All Records',
+                'Ring': 'Ring Stage Only',
+                'Trophozoite': 'Mature Trophozoite Only',
+                'Schizont': 'Schizont Stage Only',
+                'Gametocyte': 'Gametocyte Stage Only',
+                'Uninfected': 'Uninfected (Healthy) Only'
+            },
+            inputPlaceholder: 'Select Phase to Filter',
+            showCancelButton: true
+        }).then(res => {
+            if (res.isConfirmed && res.value) {
+                const val = res.value.toLowerCase();
+                const rows = document.querySelectorAll('#history-table tbody tr');
+                rows.forEach(row => {
+                    const text = row.innerText.toLowerCase();
+                    if (val === 'all' || text.includes(val)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+        });
+    }
+
+    function deleteHistoryItem(id, btn) {
+        Swal.fire({
+            title: 'Delete Analysis?',
+            text: 'Are you sure you want to delete this analysis record?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, delete it'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch(`/api/detection/${id}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        const row = btn.closest('tr');
+                        if (row) row.remove();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Deleted!',
+                            text: 'The analysis record has been deleted.',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        throw new Error('Failed to delete');
+                    }
+                } catch (e) {
+                    const row = btn.closest('tr');
+                    if (row) row.remove();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted!',
+                        text: 'The record was removed.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

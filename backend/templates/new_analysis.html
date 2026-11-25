@@ -1,0 +1,618 @@
+{% extends "base.html" %}
+
+{% block title %}New Analysis - MalariaScope Pro{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">New Analysis</h1>
+        <p class="text-muted mb-0">Upload and analyze blood smear images for malaria detection.</p>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-outline-primary" onclick="showBatchUpload()">
+            <i class="fas fa-upload me-2"></i>Batch Upload
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-4">Upload Image</h5>
+                <div class="upload-area" onclick="document.getElementById('upload-input').click()">
+                    <input type="file" id="upload-input" hidden accept="image/*">
+                    <div class="upload-icon mb-3">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-primary"></i>
+                    </div>
+                    <h4>Drop your image here</h4>
+                    <p class="text-muted">or click to browse</p>
+                    <p class="small text-muted mt-2">Supported formats: PNG, JPG, JPEG, TIFF, BMP</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-4">Guidelines</h5>
+                <div class="guidelines">
+                    <div class="guideline-item mb-3">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <span>Use clear, well-focused images</span>
+                    </div>
+                    <div class="guideline-item mb-3">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <span>Ensure proper lighting conditions</span>
+                    </div>
+                    <div class="guideline-item mb-3">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <span>Maximum file size: 5MB</span>
+                    </div>
+                    <div class="guideline-item">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <span>Supported formats: PNG, JPG, TIFF, BMP</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-4">Analysis Results</h5>
+                <div class="result-wrapper">
+                    <img src="" id="preview-image" class="img-fluid rounded mb-3" style="display: none;">
+                    <div id="no-image" class="text-center text-muted py-4">
+                        <i class="fas fa-image fa-3x mb-3"></i>
+                        <p>No image selected for analysis</p>
+                    </div>
+                    <div id="result-container" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Heatmap Modal -->
+<div class="modal fade" id="heatmapModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Analysis Heatmap</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="heatmap-image" src="" class="img-fluid rounded" style="max-width: 100%;">
+                <p class="text-muted mt-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Red areas indicate regions the model focused on for its decision.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="downloadHeatmap()">
+                    <i class="fas fa-download me-2"></i>Download Heatmap
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Batch Upload Modal -->
+<div class="modal fade" id="batchUploadModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Batch Upload</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="upload-area" onclick="document.getElementById('batch-upload-input').click()">
+                    <input type="file" id="batch-upload-input" hidden accept="image/*" multiple>
+                    <div class="upload-icon mb-3">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-primary"></i>
+                    </div>
+                    <h4>Drop multiple images here</h4>
+                    <p class="text-muted">or click to browse (max 50 images)</p>
+                    <p class="small text-muted mt-2">Supported formats: PNG, JPG, JPEG, TIFF, BMP</p>
+                </div>
+                <div id="batch-files-list" class="mt-3" style="display: none;">
+                    <h6>Selected Files:</h6>
+                    <ul id="files-list" class="list-group"></ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="analyzeBatch()" id="analyze-batch-btn" disabled>
+                    <i class="fas fa-play me-2"></i>Analyze Batch
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_styles %}
+<style>
+    .upload-area {
+        border: 2px dashed #e5e7eb;
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .upload-area:hover {
+        border-color: var(--primary-color);
+        background-color: rgba(37, 99, 235, 0.02);
+    }
+
+    .upload-area.border-primary {
+        border-color: var(--primary-color);
+        background-color: rgba(37, 99, 235, 0.02);
+    }
+
+    .guideline-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.95rem;
+    }
+    
+    .heatmap-btn {
+        background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+        border: none;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+    
+    .heatmap-btn:hover {
+        background: linear-gradient(45deg, #ff5252, #ff7676);
+        transform: translateY(-1px);
+    }
+</style>
+{% endblock %}
+
+{% block additional_scripts %}
+<script>
+    // File Upload Handling
+    const uploadInput = document.getElementById('upload-input');
+    const previewImage = document.getElementById('preview-image');
+    const noImage = document.getElementById('no-image');
+    const resultContainer = document.getElementById('result-container');
+    const loadingOverlay = document.querySelector('.loading-overlay');
+    const uploadArea = document.querySelector('.upload-area');
+
+    // Drag and drop handling
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight() {
+        uploadArea.classList.add('border-primary');
+    }
+
+    function unhighlight() {
+        uploadArea.classList.remove('border-primary');
+    }
+
+    uploadArea.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const file = dt.files[0];
+        
+        if (file) {
+            uploadInput.files = dt.files;
+            handleFile(file);
+        }
+    }
+
+    uploadInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            handleFile(file);
+        }
+    });
+
+    function handleFile(file) {
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/png', 'image/tiff', 'image/bmp'];
+        if (!validTypes.includes(file.type)) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Invalid File Type',
+                text: 'Please upload a valid image file (JPG, PNG, TIFF, or BMP)',
+            });
+            uploadInput.value = '';
+            return;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            Swal.fire({
+                icon: 'error',
+                title: 'File Too Large',
+                text: 'File size should not exceed 5MB',
+            });
+            uploadInput.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImage.src = e.target.result;
+            previewImage.style.display = 'block';
+            noImage.style.display = 'none';
+            analyzeImage(file);
+        }
+        reader.onerror = function() {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error reading file. Please try again.',
+            });
+            uploadInput.value = '';
+        }
+        reader.readAsDataURL(file);
+    }
+
+    function analyzeImage(file) {
+        loadingOverlay.style.display = 'flex';
+        resultContainer.style.display = 'none';
+        
+        const formData = new FormData();
+        formData.append('image', file);
+
+        // Get CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        fetch('/api/analyze', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': csrfToken
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data || !data.result) {
+                throw new Error('Invalid response from server');
+            }
+            
+            window.currentAnalysisData = data;
+            resultContainer.style.display = 'block';
+            const isParasitized = data.result === 'Parasitized';
+            const confidence = (data.confidence * 100).toFixed(1);
+            const stageName = data.parasite_stage || (isParasitized ? 'Ring Stage (Early Trophozoite)' : 'Uninfected (Healthy Erythrocyte)');
+            const stageInfo = data.stage_info || {};
+            const stageConf = data.stage_confidence ? (data.stage_confidence * 100).toFixed(1) : confidence;
+            
+            let stageBadgeClass = 'bg-info text-dark';
+            let stageIcon = 'fa-ring';
+            if (stageName.includes('Trophozoite')) {
+                stageBadgeClass = 'bg-warning text-dark';
+                stageIcon = 'fa-bacterium';
+            } else if (stageName.includes('Schizont')) {
+                stageBadgeClass = 'bg-danger text-white';
+                stageIcon = 'fa-certificate';
+            } else if (stageName.includes('Gametocyte')) {
+                stageBadgeClass = 'bg-primary text-white';
+                stageIcon = 'fa-dna';
+            } else if (!isParasitized) {
+                stageBadgeClass = 'bg-success text-white';
+                stageIcon = 'fa-shield-virus';
+            }
+            
+            let resultHTML = `
+                <div class="alert ${isParasitized ? 'alert-danger' : 'alert-success'} animate__animated animate__fadeIn mb-3">
+                    <div class="d-flex align-items-center">
+                        <div class="alert-icon me-3">
+                            <i class="fas fa-${isParasitized ? 'virus' : 'shield-virus'} fa-2x"></i>
+                        </div>
+                        <div>
+                            <h4 class="alert-heading mb-1">${data.result}</h4>
+                            <p class="mb-0">Confidence: ${confidence}%</p>
+                            <p class="mb-0 small text-muted">${data.message || ''}</p>
+                        </div>
+                    </div>
+                    <div class="progress mt-3" style="height: 6px;">
+                        <div class="progress-bar bg-${isParasitized ? 'danger' : 'success'}" 
+                             role="progressbar" 
+                             style="width: ${confidence}%">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Malaria Phase Staging Card -->
+                <div class="card border shadow-sm mb-3 animate__animated animate__fadeIn">
+                    <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+                        <span class="fw-bold small text-uppercase text-muted"><i class="fas fa-project-diagram text-primary me-1"></i> Malaria Phase Staging</span>
+                        <span class="badge ${stageBadgeClass}"><i class="fas ${stageIcon} me-1"></i> ${stageName}</span>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0 fw-bold text-dark">${stageName}</h6>
+                            <small class="text-muted">Stage Match: <strong>${stageConf}%</strong></small>
+                        </div>
+
+                        ${isParasitized ? `
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between small text-muted mb-1">
+                                <span>Cycle Timeline: <strong>${stageInfo.timeline || '0 - 18 hrs'}</strong></span>
+                                <span>Cycle Progress: <strong>${stageInfo.cycle_progress || 35}%</strong></span>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar ${stageBadgeClass}" style="width: ${stageInfo.cycle_progress || 35}%"></div>
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <p class="small text-muted mb-2">
+                            <strong>Morphology:</strong> ${stageInfo.morphology || 'Microscopic characteristics aligned with intraerythrocytic stage.'}
+                        </p>
+                        <p class="small text-muted mb-2">
+                            <strong>Clinical Impact:</strong> ${stageInfo.clinical_implications || 'Active circulating intraerythrocytic phase.'}
+                        </p>
+                        <div class="p-2 rounded bg-light small mb-2">
+                            <strong><i class="fas fa-pills text-primary me-1"></i> Clinical Guidance:</strong> ${stageInfo.treatment || 'Consult healthcare practitioner.'}
+                        </div>
+                        <a href="/phases" class="btn btn-sm btn-outline-primary w-100 mt-1">
+                            <i class="fas fa-book-medical me-1"></i> View Full Malaria Phases Guide
+                        </a>
+                    </div>
+                </div>
+            `;
+            
+            // Add heatmap button if available
+            if (data.heatmap) {
+                resultHTML += `
+                    <div class="mt-3">
+                        <button class="btn heatmap-btn me-2" onclick="showHeatmap('${data.heatmap}')">
+                            <i class="fas fa-fire me-2"></i>View Heatmap
+                        </button>
+                        <button class="btn btn-primary me-2" onclick="downloadReport()">
+                            <i class="fas fa-download me-2"></i>Download Report
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="shareResults()">
+                            <i class="fas fa-share-alt me-2"></i>Share
+                        </button>
+                    </div>
+                `;
+            } else {
+                resultHTML += `
+                    <div class="mt-3">
+                        <button class="btn btn-primary me-2" onclick="downloadReport()">
+                            <i class="fas fa-download me-2"></i>Download Report
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="shareResults()">
+                            <i class="fas fa-share-alt me-2"></i>Share
+                        </button>
+                    </div>
+                `;
+            }
+            
+            resultContainer.innerHTML = resultHTML;
+
+            // Show success notification
+            Swal.fire({
+                icon: isParasitized ? 'warning' : 'success',
+                title: `${data.result} Detected`,
+                text: `Analysis completed with ${confidence}% confidence`,
+                timer: 3000,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false
+            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Analysis Failed',
+                text: 'An error occurred while analyzing the image. Please try again.',
+            });
+            resultContainer.style.display = 'block';
+            resultContainer.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Analysis failed. Please try again.
+                </div>
+            `;
+        })
+        .finally(() => {
+            loadingOverlay.style.display = 'none';
+        });
+    }
+
+    function showHeatmap(heatmapPath) {
+        document.getElementById('heatmap-image').src = heatmapPath;
+        const modal = new bootstrap.Modal(document.getElementById('heatmapModal'));
+        modal.show();
+    }
+
+    function downloadHeatmap() {
+        const heatmapImg = document.getElementById('heatmap-image');
+        const link = document.createElement('a');
+        link.download = 'malaria_heatmap.jpg';
+        link.href = heatmapImg.src;
+        link.click();
+    }
+
+    function showBatchUpload() {
+        const modal = new bootstrap.Modal(document.getElementById('batchUploadModal'));
+        modal.show();
+    }
+
+    // Batch upload handling
+    const batchUploadInput = document.getElementById('batch-upload-input');
+    const filesList = document.getElementById('files-list');
+    const analyzeBatchBtn = document.getElementById('analyze-batch-btn');
+    const batchFilesList = document.getElementById('batch-files-list');
+
+    batchUploadInput.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        if (files.length > 50) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Too Many Files',
+                text: 'Maximum 50 images allowed per batch.',
+            });
+            return;
+        }
+
+        filesList.innerHTML = '';
+        files.forEach((file, index) => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+            li.innerHTML = `
+                <span>${file.name}</span>
+                <span class="badge bg-primary rounded-pill">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+            `;
+            filesList.appendChild(li);
+        });
+
+        batchFilesList.style.display = 'block';
+        analyzeBatchBtn.disabled = files.length === 0;
+    });
+
+    function analyzeBatch() {
+        const files = Array.from(batchUploadInput.files);
+        if (files.length === 0) return;
+
+        const formData = new FormData();
+        files.forEach(file => {
+            formData.append('images', file);
+        });
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        // Show loading
+        Swal.fire({
+            title: 'Analyzing Images...',
+            text: `Processing ${files.length} images. This may take a few minutes.`,
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        fetch('/api/batch-analyze', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': csrfToken
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            // Show results
+            let resultsHTML = `
+                <div class="alert alert-success">
+                    <h5>Batch Analysis Complete!</h5>
+                    <p><strong>Summary:</strong></p>
+                    <ul>
+                        <li>Total Images: ${data.summary.total_images}</li>
+                        <li>Successful: ${data.summary.successful_analyses}</li>
+                        <li>Parasitized: ${data.summary.parasitized_count}</li>
+                        <li>Uninfected: ${data.summary.uninfected_count}</li>
+                        <li>Success Rate: ${data.summary.success_rate}</li>
+                    </ul>
+                </div>
+            `;
+
+            // Show individual results
+            data.results.forEach(result => {
+                const isParasitized = result.result === 'Parasitized';
+                const confidence = (result.confidence * 100).toFixed(1);
+                const stage = result.parasite_stage || (isParasitized ? 'Ring Stage' : 'Healthy');
+                
+                resultsHTML += `
+                    <div class="alert ${isParasitized ? 'alert-danger' : 'alert-success'} mb-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>${result.filename}</strong><br>
+                                <span class="badge ${isParasitized ? 'bg-danger' : 'bg-success'} me-1">${result.result} (${confidence}%)</span>
+                                <span class="badge ${isParasitized ? 'bg-warning text-dark' : 'bg-light text-dark border'}"><i class="fas fa-project-diagram me-1"></i>${stage}</span>
+                            </div>
+                            <div>
+                                ${result.heatmap ? `<button class="btn btn-sm heatmap-btn" onclick="showHeatmap('${result.heatmap}')">Heatmap</button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            Swal.fire({
+                title: 'Analysis Complete!',
+                html: resultsHTML,
+                width: '800px',
+                confirmButtonText: 'Download Report',
+                showCancelButton: true,
+                cancelButtonText: 'Close'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    downloadBatchReport(data);
+                }
+            });
+
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('batchUploadModal'));
+            modal.hide();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Batch Analysis Failed',
+                text: error.message || 'An error occurred during batch analysis.',
+            });
+        });
+    }
+
+    function downloadBatchReport(data) {
+        // Create CSV content
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Filename,Result,Confidence,Parasite_Phase,Phase_Confidence,Message\n";
+        
+        data.results.forEach(result => {
+            csvContent += `"${result.filename}","${result.result}","${(result.confidence * 100).toFixed(1)}%","${result.parasite_stage || ''}","${((result.stage_confidence || 0) * 100).toFixed(1)}%","${result.message}"\n`;
+        });
+
+        // Download CSV
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `malaria_batch_report_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+{% endblock %} 
